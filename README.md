@@ -9,7 +9,7 @@
 
 [系统设计](/process.md)
 
-系统设计[https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md](https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md)
+
 
 
 1.
