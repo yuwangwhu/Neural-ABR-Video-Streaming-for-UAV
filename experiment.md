@@ -81,13 +81,12 @@
 	        out = self.relu(self.fc2(out))
 	        out = self.fc3(out)
 	        return F.log_softmax(out)
-		
 
 ``` 
 
 上面是actor网络部分的实现，网络的输入是每时刻的状态，是一个1x13维的numpy数组，输出为1x4维的tesnor，标识的是状态动作概率。需要注意的是，这里输出的是log_softmax处理后的概率，在具体使用时需要进行指数处理。
 
-
+``` python 
 	class ValueNetwork(nn.Module):
 	    def __init__(self,input_channels=1,output_channels=128,output_size=1):
 	        super(ValueNetwork  ,self ).__init__()
@@ -138,6 +137,9 @@
 	        out = F.relu(self.fc3(out))
 	        out = self.fc4(out)
 	        return out
+
+```
+ 
 上面是critic网路部分的实现，输入的也是每时刻的1x13维的状态矩阵，输出的是1x1维的tesnor，表示的是每个状态下的状态价值V(s).
 
 
@@ -148,7 +150,7 @@
 系统状态获取以及更新也是整个系统比较重要的部分，其中主要包括获训练数据，获取送入网络的数据，状态更新以及计算奖励。下面我主要介绍这部分的相关函数。
 
 函数getThroughput比较简单，输入参数是训练的epoch，返回参数是这次训练整个过程中的吞吐量以及对应的速度、加速度以及距离信息。代码如下：
-
+``` python 
 	def getThroughputData(epoch):
 	    global train_throughput
 	    global train_speed
@@ -156,10 +158,13 @@
 	    global train_acce
 	    return train_throughput[epoch],train_speed[epoch],train_distance[epoch],train_acce[epoch]
 
+```  
+
 
 
 函数Input实现的是根据上面得到的每个epoch的数据，在每个视频块需要播放的时候送往actor-critic网络的表示状态的1x13维的numpy数组。状态是由过去八个视频块的吞吐量、此刻的视频缓存、上一视频块的比特率、此刻的速度、距离以及加速度组成。具体实现的代码如下：
 
+``` python 
 	def Input(SyntheticData,TestSpeed,TestDistance,TestAcce,BufferSize,BitRate,TrainTime):
 	    ThroughPut = SyntheticData[TrainTime - 1:TrainTime + 7]
 	    ThroughPut =np.array(ThroughPut,dtype=np.float32)
@@ -175,10 +180,13 @@
 	    networkIn =np.append(networkIn,acce)
 	    return networkIn
 
+``` 
+
 
 
 函数UpdateBuffer实现的是在状态s下，选择特定比特率action之后到达下一个状态，此过程中buffer的更新以及此action导致的卡顿时间rebuffering.需要注意的是我们在这里提到的action都是用{0，1，2，3}来表示{300kbps,750kpbs,1850kbps,2850kbps}的视频比特率的，在具体计算的时候需要通过函数BiterateTransform来进行转换一下，这一函数很简单，我们就不做描述。具体代码如下：
 
+``` python 
 	def updateBuffer(buffer,action,throughput):
 	    if 2*BitrateTransform(action)/throughput < buffer : #不卡
 	        newbuffer =buffer +2- 2*BitrateTransform(action)/throughput
@@ -190,6 +198,8 @@
 	        newbuffer = 0
 	        rebuffering = (math.ceil((2*BitrateTransform(action)/throughput -2-buffer)/0.5))*0.5
 	    return newbuffer, rebuffering
+
+``` 
 
 
 函数Reward是根据选择视频块的BitRate以及这一BitRate造成的卡顿时间rebuffering和上一视频块的比特率来计算的，计算的是根据下面公式算出的视频的QoE,也就是我们系统中的奖励值。
@@ -198,6 +208,7 @@
 
 具体实现的代码如下，实现思路就是比较视频缓存大小和下载该视频块的时间进行比较来分类讨论进行的。
 
+``` python 
 	def updateBuffer(buffer,action,throughput):
 	    if 2*BitrateTransform(action)/throughput < buffer : #不卡
 	        newbuffer =buffer +2- 2*BitrateTransform(action)/throughput
@@ -210,11 +221,13 @@
 	        rebuffering = (math.ceil((2*BitrateTransform(action)/throughput -2-buffer)/0.5))*0.5
 	    return newbuffer, rebuffering
 
+``` 
+
 函数discount_reward是根据某次播放一段视频每个状态选择动作后得到的奖励值r、最后一步的奖励值final_r以及折扣因子gama来计算这段视频中每个状态的动作价值函数的，计算的依据是下面动作价值函数的定义：
 
 
 具体实现的代码如下：
-
+``` python 
 	def discount_reward(r,gama,final_r):
 	    discounted_r =np.zeros_like(r)
 	    running_add =final_r
@@ -222,6 +235,8 @@
 	    running_add=running_add*gama+r[t]
 	    discounted_r[t]=running_add
 	    return discounted_r
+
+``` 
 
 
 ## 5.网络优化更新
@@ -234,7 +249,7 @@
 选择比特率后，我们能达到下一状态并进行状态的更新以及获得即时奖励r。
 计算每一个状态的动作价值函数Q(st,at)
 接下来我们需要做的是根据这一过程进行网络的优化更新，这也是我们的重中之重。更新过程主要分为两部分，第一部分是根据每个epoch得到的数据进行一次完整的视频播放。具体代码如下：
-
+``` python 
 	def roll_out(actor_network,value_network,TestThroughput,TestSpeed,TestDistance,TestAcce):
 	#initial
 	    CurrentBufferSize =0
@@ -287,10 +302,12 @@
 	            final_r = Reward(last_action, LastBitRate, last_rebuffer)
 	    return states,actions,rewards,buffers,final_r,action_all,rebuffer_all
 
+``` 
+
 这一部分的思路是在每个视频快获取到状态信息，然后送入actor网络根据网络输出选择特定的比特率,然后更新到下一个状态并计算出此选择的奖励值，这样循环下去直到这个视频播放完毕。在这个过程中我们只进行选择但不进行网络更新，返回值主要包括以下参数： 这一段视频中的所有状态信息（以矩阵的形式存储在states中）、每个状态下选择的动作的one_hot编码表示（以矩阵的形式存储在actions中，每个元素都是用[1，0，0，0]、[0，1，0，0]、[0，0，1，0]、[0，0，0，1]表示）、每个状态下的动作（以矩阵的形式存储在action_all中，每个元素都是0，1，2，3来表示不同的比特率)、每个状态下做出动作后的奖励（以矩阵形式存储在rewards中）、最后一个状态的奖励（final_r）以及每个状态下的卡段时间（以矩阵形式存储在rebuffer_all中。
 
 上面得到了一个完整视频播放的所有信息，接下来就可以进行一次更新了。更新分为actor网络的更新和value网络的更新。更新的核心代码如下：
-
+``` python 
 	train_throughput,train_speed,train_distance,train_acce= getThroughputData(step)
 	value_network_optim = torch.optim.Adam(value_network.parameters(), lr=decayed_learning_rate_value)
 	actor_network_optim = torch.optim.Adam(actor_network.parameters(), lr=decayed_learning_rate_actor)
@@ -340,6 +357,8 @@
 	value_network_optim.step()
 	
 	total_valueloss.append(value_network_loss.cpu().data.numpy())
+
+``` 
 actor网络是根据梯度上升来进行更新的。
 
 
