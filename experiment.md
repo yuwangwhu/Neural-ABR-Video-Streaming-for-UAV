@@ -26,7 +26,7 @@
 
 ## 3.网络搭建
 网络的搭建和深度学习中的网络类似，唯一需要注意的是在这里两个有两个独立的网络：actor和critic网络。前面已经谈到过，这两个网络的输入部分相同，都是输入的相应的状态，即一个1x13的numpy数组。具体网络搭建的代码如下：
-	
+``` python 	
 	class ActorNetwork(nn.Module):
 	    def __init__(self):
 	        super(ActorNetwork, self).__init__()
@@ -81,6 +81,9 @@
 	        out = self.relu(self.fc2(out))
 	        out = self.fc3(out)
 	        return F.log_softmax(out)
+		
+
+``` 
 
 上面是actor网络部分的实现，网络的输入是每时刻的状态，是一个1x13维的numpy数组，输出为1x4维的tesnor，标识的是状态动作概率。需要注意的是，这里输出的是log_softmax处理后的概率，在具体使用时需要进行指数处理。
 
