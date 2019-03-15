@@ -153,7 +153,7 @@
 ## 4、系统状态获取及更新
 系统状态获取以及更新也是整个系统比较重要的部分，其中主要包括获训练数据，获取送入网络的数据，状态更新以及计算奖励。下面我主要介绍这部分的相关函数。
 
-> 1 函数getThroughput比较简单，输入参数是训练的epoch，返回参数是这次训练整个过程中的吞吐量以及对应的速度、加速度以及距离信息。代码如下：
+1 函数getThroughput比较简单，输入参数是训练的epoch，返回参数是这次训练整个过程中的吞吐量以及对应的速度、加速度以及距离信息。代码如下：
 ``` python 
 	def getThroughputData(epoch):
 	    global train_throughput
@@ -166,7 +166,7 @@
 
 
 
-> 2 函数Input实现的是根据上面得到的每个epoch的数据，在每个视频块需要播放的时候送往actor-critic网络的表示状态的1x13维的numpy数组。状态是由过去八个视频块的吞吐量、此刻的视频缓存、上一视频块的比特率、此刻的速度、距离以及加速度组成。具体实现的代码如下：
+2 函数Input实现的是根据上面得到的每个epoch的数据，在每个视频块需要播放的时候送往actor-critic网络的表示状态的1x13维的numpy数组。状态是由过去八个视频块的吞吐量、此刻的视频缓存、上一视频块的比特率、此刻的速度、距离以及加速度组成。具体实现的代码如下：
 
 ``` python 
 	def Input(SyntheticData,TestSpeed,TestDistance,TestAcce,BufferSize,BitRate,TrainTime):
@@ -188,7 +188,7 @@
 
 
 
-> 3 函数UpdateBuffer实现的是在状态s下，选择特定比特率action之后到达下一个状态，此过程中buffer的更新以及此action导致的卡顿时间rebuffering.需要注意的是我们在这里提到的action都是用{0，1，2，3}来表示{300kbps,750kpbs,1850kbps,2850kbps}的视频比特率的，在具体计算的时候需要通过函数BiterateTransform来进行转换一下，这一函数很简单，我们就不做描述。具体代码如下：
+3 函数UpdateBuffer实现的是在状态s下，选择特定比特率action之后到达下一个状态，此过程中buffer的更新以及此action导致的卡顿时间rebuffering.需要注意的是我们在这里提到的action都是用{0，1，2，3}来表示{300kbps,750kpbs,1850kbps,2850kbps}的视频比特率的，在具体计算的时候需要通过函数BiterateTransform来进行转换一下，这一函数很简单，我们就不做描述。具体代码如下：
 
 ``` python 
 	def updateBuffer(buffer,action,throughput):
@@ -206,7 +206,7 @@
 ``` 
 
 
-> 4 函数Reward是根据选择视频块的BitRate以及这一BitRate造成的卡顿时间rebuffering和上一视频块的比特率来计算的，计算的是根据下面公式算出的视频的QoE,也就是我们系统中的奖励值。
+ 4 函数Reward是根据选择视频块的BitRate以及这一BitRate造成的卡顿时间rebuffering和上一视频块的比特率来计算的，计算的是根据下面公式算出的视频的QoE,也就是我们系统中的奖励值。
 ![](https://i.imgur.com/Ihffn1y.png)
 
 
@@ -227,7 +227,7 @@
 
 ``` 
 
-> 4.1 函数discount_reward是根据某次播放一段视频每个状态选择动作后得到的奖励值r、最后一步的奖励值final_r以及折扣因子gama来计算这段视频中每个状态的动作价值函数的，计算的依据是下面动作价值函数的定义：
+4.1 函数discount_reward是根据某次播放一段视频每个状态选择动作后得到的奖励值r、最后一步的奖励值final_r以及折扣因子gama来计算这段视频中每个状态的动作价值函数的，计算的依据是下面动作价值函数的定义：
 ![](https://i.imgur.com/KRe2bNq.png)
 
 具体实现的代码如下：
@@ -367,6 +367,7 @@ actor网络是根据梯度上升来进行更新的。
 ![](https://i.imgur.com/fvv5OkX.png)
 
 actor网络更新需要log_sofmax动作概率以及优势函数A(st,at)=Q(st,at)-V(st,w).其中log_softmax动作概率由action网络得到，Q(st,at)由实际选择获得的即时奖励与折扣因子计算得到，V（st,w）由critic网络得到。
+
 
 
 critic网络根据梯度下降来进行更新的。
