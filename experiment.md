@@ -1,6 +1,7 @@
 这部分详细讲解我们实现的自适应算法的代码实现部分，主要包括系统信息获取部分、网络部分以及网络更新部分。其中系统信息获取部分包括导入训练数据及数据预处理、得到网络输入、更新视频缓存、获取奖励等；网络部分主要是上一节提到的actor-critic网络的搭建；网络更新部分主要是根据强化学习算法部分多网络进行优化更新，这也是我们的重点。
-我们在实际实现时，采取了CNN、CNN+传感器、RNN+传感器三种方式的网络，三者在大体上差不多，因此在这我们仅介绍前面谈到过的CNN+传感器的网络实现。如果想看完整的代码和采集的无人机飞行中吞吐量与速度、加速度、距离之间的数据信息，请去我的github.
+我们在实际实现时，采取了CNN、CNN+传感器、RNN+传感器三种方式的网络，三者在大体上差不多，因此在这我们仅介绍前面谈到过的CNN+传感器的网络实现。如果想看完整的代码和采集的无人机飞行中吞吐量与速度、加速度、距离之间的数据信息，请查看allData目录.
 下面是我们系统部分部分代码的结构： 
+![](https://i.imgur.com/wMFtPSP.png)
 
 其中文件夹train_data里面是采集的数据，readData、py导入训练数据及数据预处理，helperwithspeed、py包含系统网络输入获取、缓存更新、获取奖励等功能、train_with_speed、py主要是网络的搭建以及网络的更新。下面将详细讲解每个部分的具体功能以及实现。
 
@@ -17,12 +18,15 @@
 
 ## 2、数据导入及预处理
 这部分主要是从txt中导入数据以及进行数据归一化预处理。
+![](https://i.imgur.com/uNSJkt1.png)
 
 数据的读取比较简单，用np.loadtxt()就可以直接将txt读取为numpy数组。 
 
 接下来是数据的归一化，在这里我们将吞吐量归一化到0.5-2.5之间。 
+![](https://i.imgur.com/3FsbaBX.png)
 
 最后，我们将数据进行重复，得到N组数据，即train_throughput、train_speed、train_distance、train_acce,他们都是维数为N*50的二维数组，其中，N为我们训练的次数，在实验中我们可以根据需要进行自行调整，在这里，我们暂取N=10000. 
+![](https://i.imgur.com/wXr0Wci.png)
 
 ## 3.网络搭建
 网络的搭建和深度学习中的网络类似，唯一需要注意的是在这里两个有两个独立的网络：actor和critic网络。前面已经谈到过，这两个网络的输入部分相同，都是输入的相应的状态，即一个1x13的numpy数组。具体网络搭建的代码如下：
@@ -149,7 +153,7 @@
 ## 4、系统状态获取及更新
 系统状态获取以及更新也是整个系统比较重要的部分，其中主要包括获训练数据，获取送入网络的数据，状态更新以及计算奖励。下面我主要介绍这部分的相关函数。
 
-函数getThroughput比较简单，输入参数是训练的epoch，返回参数是这次训练整个过程中的吞吐量以及对应的速度、加速度以及距离信息。代码如下：
+> 1 函数getThroughput比较简单，输入参数是训练的epoch，返回参数是这次训练整个过程中的吞吐量以及对应的速度、加速度以及距离信息。代码如下：
 ``` python 
 	def getThroughputData(epoch):
 	    global train_throughput
@@ -162,7 +166,7 @@
 
 
 
-函数Input实现的是根据上面得到的每个epoch的数据，在每个视频块需要播放的时候送往actor-critic网络的表示状态的1x13维的numpy数组。状态是由过去八个视频块的吞吐量、此刻的视频缓存、上一视频块的比特率、此刻的速度、距离以及加速度组成。具体实现的代码如下：
+> 2 函数Input实现的是根据上面得到的每个epoch的数据，在每个视频块需要播放的时候送往actor-critic网络的表示状态的1x13维的numpy数组。状态是由过去八个视频块的吞吐量、此刻的视频缓存、上一视频块的比特率、此刻的速度、距离以及加速度组成。具体实现的代码如下：
 
 ``` python 
 	def Input(SyntheticData,TestSpeed,TestDistance,TestAcce,BufferSize,BitRate,TrainTime):
@@ -184,7 +188,7 @@
 
 
 
-函数UpdateBuffer实现的是在状态s下，选择特定比特率action之后到达下一个状态，此过程中buffer的更新以及此action导致的卡顿时间rebuffering.需要注意的是我们在这里提到的action都是用{0，1，2，3}来表示{300kbps,750kpbs,1850kbps,2850kbps}的视频比特率的，在具体计算的时候需要通过函数BiterateTransform来进行转换一下，这一函数很简单，我们就不做描述。具体代码如下：
+> 3 函数UpdateBuffer实现的是在状态s下，选择特定比特率action之后到达下一个状态，此过程中buffer的更新以及此action导致的卡顿时间rebuffering.需要注意的是我们在这里提到的action都是用{0，1，2，3}来表示{300kbps,750kpbs,1850kbps,2850kbps}的视频比特率的，在具体计算的时候需要通过函数BiterateTransform来进行转换一下，这一函数很简单，我们就不做描述。具体代码如下：
 
 ``` python 
 	def updateBuffer(buffer,action,throughput):
@@ -202,8 +206,8 @@
 ``` 
 
 
-函数Reward是根据选择视频块的BitRate以及这一BitRate造成的卡顿时间rebuffering和上一视频块的比特率来计算的，计算的是根据下面公式算出的视频的QoE,也就是我们系统中的奖励值。
-
+> 4 函数Reward是根据选择视频块的BitRate以及这一BitRate造成的卡顿时间rebuffering和上一视频块的比特率来计算的，计算的是根据下面公式算出的视频的QoE,也就是我们系统中的奖励值。
+![](https://i.imgur.com/Ihffn1y.png)
 
 
 具体实现的代码如下，实现思路就是比较视频缓存大小和下载该视频块的时间进行比较来分类讨论进行的。
@@ -223,8 +227,8 @@
 
 ``` 
 
-函数discount_reward是根据某次播放一段视频每个状态选择动作后得到的奖励值r、最后一步的奖励值final_r以及折扣因子gama来计算这段视频中每个状态的动作价值函数的，计算的依据是下面动作价值函数的定义：
-
+> 4.1 函数discount_reward是根据某次播放一段视频每个状态选择动作后得到的奖励值r、最后一步的奖励值final_r以及折扣因子gama来计算这段视频中每个状态的动作价值函数的，计算的依据是下面动作价值函数的定义：
+![](https://i.imgur.com/KRe2bNq.png)
 
 具体实现的代码如下：
 ``` python 
@@ -360,14 +364,13 @@
 
 ``` 
 actor网络是根据梯度上升来进行更新的。
-
-
+![](https://i.imgur.com/fvv5OkX.png)
 
 actor网络更新需要log_sofmax动作概率以及优势函数A(st,at)=Q(st,at)-V(st,w).其中log_softmax动作概率由action网络得到，Q(st,at)由实际选择获得的即时奖励与折扣因子计算得到，V（st,w）由critic网络得到。
 
+
 critic网络根据梯度下降来进行更新的。
-
-
+![](https://i.imgur.com/zzYS6lm.png)
 
 critic网络更新需要即时奖励rt，下一个状态的价值函数V(st+1)以及这个状态的状态价值V(st).其中rt是根据实际值得到的QoE,V(st+1)和V(st)是根据critic网络得到的。
 
