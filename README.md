@@ -7,7 +7,7 @@
 
 ![](https://i.imgur.com/sUWkSF9.png)
 
-[[https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md](https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md)]([https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md](https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md) "系统设计")
+系统设计[https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md](https://github.com/Leesen998/Neural-ABR-Video-Streaming-for-UAV/blob/master/process.md)
 
 
 1.
