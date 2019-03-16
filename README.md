@@ -1,4 +1,3 @@
-# Neural ABR Video Streaming for UAV
 # Sensor-Assisted Neural ABR Video Streaming for UAV  Based on Deep Reinforcement Learning
 
 ### 项目介绍
